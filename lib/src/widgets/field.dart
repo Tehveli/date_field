@@ -56,14 +56,15 @@ enum DateTimeFieldPickerPlatform {
 /// clicks on it ! The date picker is **platform responsive** (ios date picker style for ios, ...)
 class DateTimeField extends StatefulWidget {
   DateTimeField({
-    required this.onChanged,
+    this.onChanged,
     super.key,
     this.value,
     this.onTap,
+    this.enabled,
     this.style,
     this.focusNode,
     this.autofocus = false,
-    this.enableFeedback,
+    this.enableFeedback = true,
     this.padding,
     this.hideDefaultSuffixIcon = false,
     this.decoration,
@@ -84,6 +85,7 @@ class DateTimeField extends StatefulWidget {
     Key? key,
     required ValueChanged<DateTime?>? onChanged,
     DateTime? value,
+    bool? enabled,
     InputDecoration? decoration,
     DateTime? firstDate,
     DateTime? lastDate,
@@ -99,21 +101,22 @@ class DateTimeField extends StatefulWidget {
     VoidCallback? onTap,
     FocusNode? focusNode,
     bool hideDefaultSuffixIcon = false,
-    bool? enableFeedback,
+    bool enableFeedback = true,
     DateTimeFieldPickerPlatform pickerPlatform =
         DateTimeFieldPickerPlatform.adaptive,
   }) =>
       DateTimeField(
         key: key,
         mode: DateTimeFieldPickerMode.time,
-        firstDate: firstDate ?? DateTime(2000),
-        lastDate: lastDate ?? DateTime(2001),
+        firstDate: firstDate ?? DateTime(2000, 1, 1, 0, 0),
+        lastDate: lastDate ?? DateTime(2000, 1, 1, 23, 59),
         onChanged: onChanged,
         value: value,
         decoration: decoration,
         initialPickerDateTime: initialPickerDateTime,
         style: style,
         autofocus: autofocus,
+        enabled: enabled,
         dateFormat: dateFormat,
         padding: padding,
         onTap: onTap,
@@ -128,11 +131,12 @@ class DateTimeField extends StatefulWidget {
   DateTimeField._formField({
     required this.onChanged,
     this.value,
+    this.enabled,
     this.onTap,
     this.style,
     this.focusNode,
     this.autofocus = false,
-    this.enableFeedback,
+    this.enableFeedback = true,
     this.padding,
     this.decoration,
     this.mode = DateTimeFieldPickerMode.dateAndTime,
@@ -154,6 +158,10 @@ class DateTimeField extends StatefulWidget {
 
   /// A callback that gets executed when the user changes the [DateTime] in the [DateTimeField].
   final ValueChanged<DateTime?>? onChanged;
+
+  /// Whether the [DateTimeField] is enabled or not, if null uses [InputDecoration.enabled],
+  /// if null defaults to true.
+  final bool? enabled;
 
   /// A callback that gets executed when the user taps on the [DateTimeField] and before the
   /// pickers are shown.
@@ -188,7 +196,7 @@ class DateTimeField extends StatefulWidget {
   final EdgeInsetsGeometry? padding;
 
   /// See [InkWell.enableFeedback].
-  final bool? enableFeedback;
+  final bool enableFeedback;
 
   /// The first [DateTime] the user can select.
   ///
@@ -301,24 +309,7 @@ class _DateTimeFieldState extends State<DateTimeField> {
   Widget build(BuildContext context) {
     assert(debugCheckLocalizationsForPlatformAvailable(context));
 
-    InputDecoration decoration = widget.decoration ?? const InputDecoration();
-
-    decoration = decoration.applyDefaults(
-      Theme.of(context).inputDecorationTheme,
-    );
-
-    if (!widget.hideDefaultSuffixIcon && decoration.suffixIcon == null) {
-      decoration = decoration.copyWith(
-        suffixIcon: const Icon(Icons.event_note),
-      );
-    }
-
-    if (!_enabled) {
-      decoration = decoration.copyWith(
-        prefixIconColor: Theme.of(context).disabledColor,
-        suffixIconColor: Theme.of(context).disabledColor,
-      );
-    }
+    final InputDecoration decoration = _getEffectiveDecoration(context);
 
     final bool isDense = decoration.isDense ?? false;
 
@@ -332,11 +323,8 @@ class _DateTimeFieldState extends State<DateTimeField> {
         style: _enabled
             ? _textStyle!
             : _textStyle!.copyWith(color: Theme.of(context).disabledColor),
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            minHeight: _denseButtonHeight,
-            maxHeight: isDense ? _denseButtonHeight : double.infinity,
-          ),
+        child: SizedBox(
+          height: isDense ? _denseButtonHeight : null,
           child: widget.value != null
               ? Text(widget.dateFormat.format(widget.value!))
               : const Text(''),
@@ -368,6 +356,7 @@ class _DateTimeFieldState extends State<DateTimeField> {
         child: InkWell(
           mouseCursor: effectiveMouseCursor,
           onTap: _enabled ? _handleTap : null,
+          customBorder: decoration.border,
           canRequestFocus: _enabled,
           focusNode: _focusNode,
           autofocus: widget.autofocus,
@@ -384,22 +373,45 @@ class _DateTimeFieldState extends State<DateTimeField> {
     );
   }
 
+  InputDecoration _getEffectiveDecoration(BuildContext context) {
+    InputDecoration decoration = widget.decoration ?? const InputDecoration();
+
+    decoration = decoration.applyDefaults(
+      Theme.of(context).inputDecorationTheme,
+    );
+
+    if (!widget.hideDefaultSuffixIcon && decoration.suffixIcon == null) {
+      decoration = decoration.copyWith(
+        suffixIcon: widget.mode == DateTimeFieldPickerMode.time
+            ? const Icon(Icons.access_time)
+            : const Icon(Icons.event_note),
+      );
+    }
+
+    if (!_enabled) {
+      decoration = decoration.copyWith(
+        enabled: false,
+      );
+    }
+
+    return decoration;
+  }
+
   Future<void> _handleTap() async {
     _isSelecting = true;
     _focusNode?.requestFocus();
     widget.onTap?.call();
 
     final DateTime? newDateTime = await showAdaptiveDateTimePicker(
-      context: context,
-      mode: widget.mode,
-      pickerPlatform: widget.pickerPlatform,
-      cupertinoDatePickerOptions: widget.cupertinoDatePickerOptions,
-      materialDatePickerOptions: widget.materialDatePickerOptions,
-      materialTimePickerOptions: widget.materialTimePickerOptions,
-      initialPickerDateTime: _initialPickerDateTime,
-      firstDate: widget.firstDate,
-      lastDate: widget.lastDate,
-    );
+        context: context,
+        mode: widget.mode,
+        pickerPlatform: widget.pickerPlatform,
+        cupertinoDatePickerOptions: widget.cupertinoDatePickerOptions,
+        materialDatePickerOptions: widget.materialDatePickerOptions,
+        materialTimePickerOptions: widget.materialTimePickerOptions,
+        firstDate: widget.firstDate,
+        lastDate: widget.lastDate,
+        initialPickerDateTime: widget.value ?? widget.initialPickerDateTime);
 
     if (mounted) {
       _isSelecting = false;
@@ -410,28 +422,6 @@ class _DateTimeFieldState extends State<DateTimeField> {
     }
   }
 
-  DateTime get _initialPickerDateTime {
-    if (widget.value != null) {
-      return widget.value!;
-    }
-
-    if (widget.initialPickerDateTime != null) {
-      return widget.initialPickerDateTime!;
-    }
-
-    final DateTime now = DateTime.now();
-
-    if (widget.firstDate.isAfter(now)) {
-      return widget.firstDate;
-    }
-
-    if (widget.lastDate.isBefore(now)) {
-      return widget.lastDate;
-    }
-
-    return now;
-  }
-
   double get _denseButtonHeight {
     final double fontSize = _textStyle!.fontSize ??
         Theme.of(context).textTheme.titleMedium!.fontSize!;
@@ -440,7 +430,7 @@ class _DateTimeFieldState extends State<DateTimeField> {
     return math.max(scaledFontSize, _kDenseButtonHeight);
   }
 
-  bool get _enabled => widget.onChanged != null;
+  bool get _enabled => widget.enabled ?? widget.decoration?.enabled ?? true;
 
   TextStyle? get _textStyle =>
       widget.style ?? Theme.of(context).textTheme.titleMedium;

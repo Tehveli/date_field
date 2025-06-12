@@ -1,3 +1,52 @@
+# 6.0.3+1
+
+* Removing angle brackets from the documentation to prevent HTML rendering issues.
+
+# 6.0.3
+
+* Fixing issue #95, when isDense was set to false, there was a minimum height imposed for no apparent reason. This
+  was removed. The widget tree is now closer to similar widgets in the Flutter framework.
+
+# 6.0.2
+
+* enableFeedback is now set to true by default.
+
+# 6.0.1
+
+* Fixing issue #92, the time picker dialog was not showing the correct initial selected time on both dialogs. Added
+  regression tests to prevent this from happening again.
+
+# 6.0.0
+
+* Adding unit tests for widgets and helper functions.
+* Adding \*enabled\* parameter to the `DateTimeField` and `DateTimeFormField` widgets. Previously, a null `onChanged`
+  callback was required to disable the widget. Now, the `enabled` parameter can be used to disable the widget.
+
+# 5.3.4+1
+
+* Fixing issue #89, time of day isAfter isBefore is only recently implemented, so we need to use the
+  old way to compare the time.
+
+# 5.3.4
+
+* Fixing issue #85, time-only picker did not allow to select the time correctly.
+
+# 5.3.3+1
+
+* DartFmt the code
+
+# 5.3.3
+
+- Fixing issue #84, clipping Inkwell to its border radius.
+
+# 5.3.2
+
+- Bumping maximum intl version to `<0.21.0`.
+
+# 5.3.1
+
+- Adding support for *WASM* by removing dependency on `dart:io` package. This is a solution to issue #83
+
 # 5.3.0
 
 - Fixing material dialogs returning the initial value on cancel instead of null. This caused updates

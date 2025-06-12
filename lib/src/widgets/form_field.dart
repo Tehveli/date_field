@@ -11,7 +11,7 @@ part of 'field.dart';
 /// save or reset the form field.
 class DateTimeFormField extends FormField<DateTime> {
   DateTimeFormField({
-    required this.onChanged,
+    this.onChanged,
     super.key,
     super.initialValue,
     super.onSaved,
@@ -23,8 +23,9 @@ class DateTimeFormField extends FormField<DateTime> {
     TextStyle? style,
     VoidCallback? onTap,
     FocusNode? focusNode,
+    bool? enabled,
     bool autofocus = false,
-    bool? enableFeedback,
+    bool enableFeedback = true,
     EdgeInsetsGeometry? padding,
     bool hideDefaultSuffixIcon = false,
     DateTime? initialPickerDateTime,
@@ -71,8 +72,9 @@ class DateTimeFormField extends FormField<DateTime> {
                 builder: (BuildContext context) {
                   return DateTimeField._formField(
                     value: state.value,
-                    onChanged: onChanged == null ? null : state.didChange,
+                    onChanged: state.didChange,
                     onTap: onTap,
+                    enabled: enabled,
                     style: style,
                     focusNode: focusNode,
                     autofocus: autofocus,
